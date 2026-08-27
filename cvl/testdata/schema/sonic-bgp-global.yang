@@ -301,8 +301,13 @@ module sonic-bgp-global {
                     }
                     must "count(../../EVPN_ETHERNET_SEGMENT_LIST[name!=current()/../name][ifname=current()]) = 0";
                 }
+                leaf label {
+                    type string;
+                    must "count(../../EVPN_ETHERNET_SEGMENT_LIST[name!=current()/../name][label=current()]) = 0";
+                }
                 leaf delay-time {
                     type uint16;
+                    when "count(../../EVPN_ETHERNET_SEGMENT_LIST[name!=current()/../name][label=current()/../label]) = 0";
                 }
             }
         }

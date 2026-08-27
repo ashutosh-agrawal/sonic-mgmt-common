@@ -124,3 +124,109 @@ func TestValidateEditConfig_When_Exp_In_Leaf_Negative(t *testing.T) {
 		Msg:       whenExpressionErrMessage,
 	})
 }
+
+func TestValidateEditConfig_When_Predicate_Escape_SingleQuote(t *testing.T) {
+	t.Run("create_entry_unique_label", func(tt *testing.T) {
+		setupTestData(tt, map[string]interface{}{
+			"EVPN_ETHERNET_SEGMENT": map[string]interface{}{
+				"special-existing": map[string]interface{}{
+					"label":      "Test'Port",
+					"delay-time": "10",
+				},
+			},
+		})
+
+		c := NewTestSession(tt)
+		res, _ := c.ValidateEditConfig([]CVLEditConfigData{{
+			VType: VALIDATE_ALL,
+			VOp:   OP_CREATE,
+			Key:   "EVPN_ETHERNET_SEGMENT|special-unique",
+			Data: map[string]string{
+				"label":      "ordinary-value",
+				"delay-time": "12",
+			},
+		}})
+		verifyErr(tt, res, Success)
+	})
+
+	t.Run("create_entry_duplicate_label", func(tt *testing.T) {
+		setupTestData(tt, map[string]interface{}{
+			"EVPN_ETHERNET_SEGMENT": map[string]interface{}{
+				"special-existing": map[string]interface{}{
+					"label":      "Test'Port",
+					"delay-time": "10",
+				},
+			},
+		})
+
+		c := NewTestSession(tt)
+		res, _ := c.ValidateEditConfig([]CVLEditConfigData{{
+			VType: VALIDATE_ALL,
+			VOp:   OP_CREATE,
+			Key:   "EVPN_ETHERNET_SEGMENT|special-duplicate",
+			Data: map[string]string{
+				"label":      "Test'Port",
+				"delay-time": "12",
+			},
+		}})
+		verifyErr(tt, res, CVLErrorInfo{
+			ErrCode:   CVL_SEMANTIC_ERROR,
+			TableName: "EVPN_ETHERNET_SEGMENT",
+			Field:     "delay-time",
+			Msg:       whenExpressionErrMessage,
+		})
+	})
+}
+
+func TestValidateEditConfig_When_Predicate_Escape_Backslash(t *testing.T) {
+	t.Run("create_entry_unique_label", func(tt *testing.T) {
+		setupTestData(tt, map[string]interface{}{
+			"EVPN_ETHERNET_SEGMENT": map[string]interface{}{
+				"special-existing": map[string]interface{}{
+					"label":      `Test\Port`,
+					"delay-time": "10",
+				},
+			},
+		})
+
+		c := NewTestSession(tt)
+		res, _ := c.ValidateEditConfig([]CVLEditConfigData{{
+			VType: VALIDATE_ALL,
+			VOp:   OP_CREATE,
+			Key:   "EVPN_ETHERNET_SEGMENT|special-unique",
+			Data: map[string]string{
+				"label":      "ordinary-value",
+				"delay-time": "12",
+			},
+		}})
+		verifyErr(tt, res, Success)
+	})
+
+	t.Run("create_entry_duplicate_label", func(tt *testing.T) {
+		setupTestData(tt, map[string]interface{}{
+			"EVPN_ETHERNET_SEGMENT": map[string]interface{}{
+				"special-existing": map[string]interface{}{
+					"label":      `Test\Port`,
+					"delay-time": "10",
+				},
+			},
+		})
+
+		c := NewTestSession(tt)
+		res, _ := c.ValidateEditConfig([]CVLEditConfigData{{
+			VType: VALIDATE_ALL,
+			VOp:   OP_CREATE,
+			Key:   "EVPN_ETHERNET_SEGMENT|special-duplicate",
+			Data: map[string]string{
+				"label":      `Test\Port`,
+				"delay-time": "12",
+			},
+		}})
+		verifyErr(tt, res, CVLErrorInfo{
+			ErrCode:   CVL_SEMANTIC_ERROR,
+			TableName: "EVPN_ETHERNET_SEGMENT",
+			Field:     "delay-time",
+			Msg:       whenExpressionErrMessage,
+		})
+	})
+}
